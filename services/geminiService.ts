@@ -8,7 +8,7 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 export const analyzeAsJudge = async (file: CaseFile): Promise<JudgeAnalysis> => {
   // Usamos el modelo estable 1.5 Pro que es el mejor para PDFs
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-pro",
+    model: "gemini-1.5-flash",
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
