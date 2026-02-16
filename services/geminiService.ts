@@ -1,38 +1,52 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { CaseFile, JudgeAnalysis } from "../types";
 
-// PEGÁ TU CLAVE DIRECTAMENTE ACÁ PARA PROBAR
-const API_KEY_MANUAL = "TU_CLAVE_AQUÍ_QUE_TERMINA_EN_M-5g"; 
+export const analyzeAsJudge = async (file: any) => {
+  // 1. Intenta leer de Vercel. Si no, busca en el almacenamiento del navegador
+  let apiKey = import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('PASCALEX_KEY');
 
-export const analyzeAsJudge = async (file: CaseFile): Promise<JudgeAnalysis> => {
-  // Intentamos leer de Vercel, y si no, usamos la manual
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || API_KEY_MANUAL;
+  // 2. Si sigue sin haber clave, se la pedimos al usuario por única vez
+  if (!apiKey || apiKey === "undefined") {
+    apiKey = prompt("Por favor, ingresa tu API Key de Gemini para continuar:");
+    if (apiKey) {
+      localStorage.setItem('PASCALEX_KEY', apiKey);
+    }
+  }
+
+  if (!apiKey) {
+    alert("Sin API Key no se puede analizar el documento.");
+    throw new Error("No hay API Key configurada.");
+  }
 
   const genAI = new GoogleGenerativeAI(apiKey);
   
+  // Usamos el modelo Flash que es el más rápido para estas pruebas
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-pro",
+    model: "gemini-1.5-flash",
     generationConfig: {
       responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          summary: { type: SchemaType.STRING },
-          complianceStatus: { type: SchemaType.BOOLEAN },
-          observations: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          riskAnalysis: { type: SchemaType.STRING },
-        },
-        required: ["summary", "complianceStatus"],
-      },
-    },
+    }
   });
 
+  // Limpiamos el base64
   const base64Data = file.content.includes(',') ? file.content.split(',')[1] : file.content;
 
-  const result = await model.generateContent([
-    "Analizá este documento judicial laboral argentino.",
-    { inlineData: { data: base64Data, mimeType: "application/pdf" } }
-  ]);
+  try {
+    const result = await model.generateContent([
+      "Analizá esta demanda laboral argentina. Devolvé un JSON con: summary (string con liquidación y hechos clave), complianceStatus (boolean), observations (array de strings) y riskAnalysis (string).",
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: "application/pdf",
+        },
+      },
+    ]);
 
-  return JSON.parse(result.response.text());
+    const text = result.response.text();
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Error en la IA:", error);
+    // Si falla, borramos la llave por si era inválida para que la pida de nuevo
+    localStorage.removeItem('PASCALEX_KEY');
+    throw error;
+  }
 };
