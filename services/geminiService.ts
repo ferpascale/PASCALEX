@@ -1,14 +1,13 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { CaseFile, JudgeAnalysis } from "../types";
 
-// Usamos la variable de entorno de Vercel
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(API_KEY);
-
 export const analyzeAsJudge = async (file: CaseFile): Promise<JudgeAnalysis> => {
-  // Usamos el modelo estable 1.5 Pro que es el mejor para PDFs
+  // Inicializamos adentro para asegurar que lea la variable de Vercel
+  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+  const genAI = new GoogleGenerativeAI(API_KEY);
+
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-pro",
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
