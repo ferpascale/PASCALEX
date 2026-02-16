@@ -1,0 +1,7 @@
+{
+  "name": "PASCALEX - Justicia Nacional del Trabajo",
+  "description": "Plataforma LegalTech avanzada para el análisis de expedientes laborales bajo la Ley 18.345. Automatización de hechos controvertidos y pliegos.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
